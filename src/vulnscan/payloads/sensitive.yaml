@@ -1,0 +1,110 @@
+version: "1.0"
+description: "Sensitive path dictionary for information leakage detection"
+
+paths:
+  version_control:
+    - path: ".git/HEAD"
+      keywords: ["ref: refs/"]
+      severity: high
+    - path: ".git/config"
+      keywords: ["[core]", "[remote]"]
+      severity: high
+    - path: ".svn/entries"
+      keywords: ["dir ", "file "]
+      severity: high
+
+  configuration:
+    - path: ".env"
+      keywords: ["DB_", "SECRET", "PASSWORD", "APP_KEY", "API_KEY"]
+      severity: high
+    - path: ".htaccess"
+      keywords: ["RewriteEngine", "AuthType", "Deny"]
+      severity: medium
+    - path: "web.config"
+      keywords: ["<configuration>", "connectionString"]
+      severity: high
+    - path: "config.php"
+      keywords: ["<?php", "DB_"]
+      severity: high
+
+  backups:
+    - path: "backup.sql"
+      keywords: ["INSERT INTO", "CREATE TABLE", "MySQL"]
+      severity: high
+    - path: "dump.sql"
+      keywords: ["INSERT INTO", "CREATE TABLE"]
+      severity: high
+    - path: "database.sql"
+      keywords: ["INSERT INTO", "CREATE TABLE"]
+      severity: high
+    - path: ".bak"
+      keywords: []
+      severity: medium
+    - path: "index.php.bak"
+      keywords: ["<?php"]
+      severity: medium
+
+  info_pages:
+    - path: "phpinfo.php"
+      keywords: ["PHP Version", "phpinfo"]
+      severity: medium
+    - path: "info.php"
+      keywords: ["PHP Version", "phpinfo"]
+      severity: medium
+    - path: "server-status"
+      keywords: ["Server Status", "Apache"]
+      severity: medium
+    - path: "server-info"
+      keywords: ["Server Information"]
+      severity: medium
+
+  admin_panels:
+    - path: "admin/"
+      keywords: ["admin", "login", "dashboard"]
+      severity: low
+    - path: "wp-admin/"
+      keywords: ["WordPress"]
+      severity: low
+    - path: "debug/"
+      keywords: ["debug", "trace"]
+      severity: medium
+
+  error_logs:
+    - path: "elmah.axd"
+      keywords: ["Error Log"]
+      severity: medium
+    - path: "trace.axd"
+      keywords: ["Trace"]
+      severity: medium
+
+  public_docs:
+    - path: "robots.txt"
+      keywords: ["Disallow", "Allow", "User-agent"]
+      severity: low
+    - path: "sitemap.xml"
+      keywords: ["<urlset", "<sitemap"]
+      severity: low
+    - path: "README.md"
+      keywords: ["readme", "installation", "getting started"]
+      severity: low
+    - path: "CHANGELOG.md"
+      keywords: ["changelog", "release notes", "version history"]
+      severity: low
+    - path: "README.txt"
+      keywords: ["readme"]
+      severity: low
+
+# Keyword matching rules for confirmed findings
+interesting_keywords:
+  ".git/HEAD": ["ref: refs/"]
+  ".git/config": ["[core]", "[remote]"]
+  ".env": ["=", "DB_", "SECRET", "KEY", "PASS"]
+  "phpinfo.php": ["phpinfo", "PHP Version"]
+  "robots.txt": ["User-agent", "Disallow", "Allow"]
+  "sitemap.xml": ["<urlset", "<sitemap"]
+
+# Severity mapping by path patterns
+severity_rules:
+  high: [".git", ".env", "backup", "dump", ".sql"]
+  medium: ["phpinfo", "info.php", "server-status", "admin", "debug"]
+  low: ["robots.txt", "sitemap.xml", "README", "CHANGELOG"]

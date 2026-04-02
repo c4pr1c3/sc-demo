@@ -1,5 +1,7 @@
 # Web 应用漏洞扫描器
 
+![CI](https://github.com/c4pr1c3/2026-ns-security-practice/actions/workflows/ci.yml/badge.svg?branch=main)
+
 自动化 Web 安全漏洞扫描工具，支持 SQL 注入检测、反射型 XSS 检测、敏感信息泄露扫描，并自动生成 HTML/JSON 格式的扫描报告。
 
 ## 功能特性
@@ -64,13 +66,24 @@ Reports saved:
 
 ```
 src/vulnscan/
-├── cli.py         # CLI 入口 + 扫描管线
-├── crawler.py     # httpx+BS4 爬虫, 登录/CSRF处理
-├── scanner.py     # SQL 注入检测引擎
-├── xss.py         # 反射型 XSS 检测
-├── sensitive.py   # 敏感路径扫描
-├── reporter.py    # JSON + HTML 报告生成
-├── models.py      # 数据模型定义
+├── cli.py             # CLI 入口 + 扫描管线
+├── crawler.py         # httpx+BS4 爬虫, 登录/CSRF处理
+├── scanner.py         # SQL 注入检测引擎
+├── xss.py             # 反射型 XSS 检测
+├── sensitive.py       # 敏感路径扫描
+├── reporter.py        # JSON + HTML 报告生成
+├── models.py          # 数据模型定义
+├── payloads/          # Payload 数据 (YAML)
+│   ├── __init__.py    # Payload 加载器
+│   ├── sqli.yaml      # SQL 注入 Payload
+│   ├── xss.yaml       # XSS Payload
+│   └── sensitive.yaml # 敏感路径字典
+├── detectors/         # 检测器插件
+│   ├── __init__.py    # 检测器注册表
+│   ├── base.py        # BaseDetector ABC
+│   ├── sqli.py        # SQLi 检测器
+│   ├── xss.py         # XSS 检测器
+│   └── sensitive.py   # 敏感路径检测器
 ├── __init__.py
 └── __main__.py
 ```
@@ -81,7 +94,23 @@ src/vulnscan/
 - httpx (HTTP 客户端)
 - BeautifulSoup4 (HTML 解析)
 - Jinja2 (HTML 报告模板)
+- PyYAML (Payload 加载)
 - argparse (CLI)
+
+## 测试
+
+```bash
+# 安装开发依赖
+pip install -e ".[dev]"
+
+# 运行所有测试（需要 DVWA 靶场）
+pytest -v
+
+# 仅运行 Payload 结构测试（无需靶场）
+pytest tests/test_payloads.py -v
+```
+
+CI 自动化：每次 push/PR 自动在 GitHub Actions 中启动 DVWA Docker 容器并运行全量测试。
 
 ## 测试靶场
 

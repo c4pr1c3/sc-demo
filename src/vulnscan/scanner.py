@@ -8,47 +8,18 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import httpx
 
 from vulnscan.models import Form, FormField, PageResult, Severity, VulnType, Vulnerability
+from vulnscan.payloads import load_payloads
 
 logger = logging.getLogger(__name__)
 
-# MySQL error patterns indicating SQL injection
-SQL_ERROR_PATTERNS = [
-    "you have an error in your sql syntax",
-    "mysql_fetch",
-    "mysql_num_rows",
-    "mysql_affected_rows",
-    "warning: mysql",
-    "valid mysql result",
-    "check the manual that corresponds to your",
-    "mysql server version",
-    "mariadb server version",
-    "supplied argument is not a valid mysql",
-    "sqlstate",
-    "unclosed quotation mark",
-    "unterminated string",
+# Load payloads from YAML
+_sqli_data = load_payloads("sqli")
+SQL_ERROR_PATTERNS: list[str] = _sqli_data["error_based"]["detection_patterns"]
+ERROR_PAYLOADS: list[str] = _sqli_data["error_based"]["payloads"]
+BLIND_PAIRS: list[tuple[str, str]] = [
+    (p["true_payload"], p["false_payload"]) for p in _sqli_data["boolean_blind"]["pairs"]
 ]
-
-# Error-based injection payloads
-ERROR_PAYLOADS = [
-    "'",
-    '"',
-    "1'",
-    "1'--",
-    "1' OR '1'='1",
-    "1' OR '1'='1'--",
-    "' OR '1'='1",
-    "' OR 1=1--",
-]
-
-# Boolean-blind payloads: (true_condition, false_condition)
-BLIND_PAIRS = [
-    ("1 AND 1=1", "1 AND 1=2"),
-    ("1' AND '1'='1", "1' AND '1'='2"),
-    ("1 AND 1=1--", "1 AND 1=2--"),
-]
-
-# Minimum response length difference to confirm boolean-blind
-BLIND_DIFF_THRESHOLD = 50
+BLIND_DIFF_THRESHOLD: int = _sqli_data["boolean_blind"]["diff_threshold"]
 
 
 def _inject_get(

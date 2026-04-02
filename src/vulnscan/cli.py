@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> None:
 
 def _run_scan(args: argparse.Namespace) -> None:
     from vulnscan.crawler import crawl_site
-    from vulnscan.scanner import scan_site
+    from vulnscan.detectors import get_detectors
     from vulnscan.reporter import generate_json, generate_html
 
     target = args.url.rstrip("/")
@@ -64,23 +64,11 @@ def _run_scan(args: argparse.Namespace) -> None:
     total_forms = sum(len(p.forms) for p in pages)
     print(f"[+] Crawled {len(pages)} pages, found {total_forms} forms")
 
-    # Phase 2: Scan for SQL injection
-    print("\n[+] Scanning for SQL injection...")
-    vulns = scan_site(pages, target, args.user, args.password)
-
-    # Phase 3: Scan for sensitive paths
-    print("\n[+] Scanning for sensitive information leakage...")
-    from vulnscan.sensitive import scan_sensitive_paths
-    import httpx
-    with httpx.Client(timeout=30, follow_redirects=True) as client:
-        from vulnscan.crawler import login
-        login(client, target, args.user, args.password)
-        vulns.extend(scan_sensitive_paths(client, target))
-
-    # Phase 4: Scan for reflected XSS
-    print("\n[+] Scanning for reflected XSS...")
-    from vulnscan.xss import scan_xss
-    vulns.extend(scan_xss(pages, target, args.user, args.password))
+    # Phase 2: Run all registered detectors
+    vulns = []
+    for detector in get_detectors():
+        print(f"\n[+] Running detector: {detector.name}...")
+        vulns.extend(detector.scan(pages, target, args.user, args.password))
 
     # Print results
     print(f"\n{'='*60}")

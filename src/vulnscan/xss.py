@@ -9,41 +9,14 @@ import re
 import httpx
 
 from vulnscan.models import Form, PageResult, Severity, VulnType, Vulnerability
+from vulnscan.payloads import load_payloads
 
 logger = logging.getLogger(__name__)
 
-# XSS payloads - each with a unique marker for reliable matching
-XSS_PAYLOADS = [
-    # Basic script tags
-    '<script>alert(1)</script>',
-    '<script>confirm(1)</script>',
-    '<script>prompt(1)</script>',
-    # Event handlers
-    '"><img src=x onerror=alert(1)>',
-    "' onmouseover='alert(1)",
-    '" onmouseover="alert(1)',
-    # SVG
-    '<svg onload=alert(1)>',
-    '<svg/onload=alert(1)>',
-    # Body/iframe
-    '<body onload=alert(1)>',
-    '<iframe src="javascript:alert(1)">',
-    # HTML injection (context detection)
-    '<h1>xss_test_marker</h1>',
-    '<b>xss_test_marker</b>',
-]
-
-# Unique markers to look for in response (proves payload was reflected)
-REFLECTION_MARKERS = [
-    "<script",
-    "onerror=",
-    "onload=",
-    "onmouseover=",
-    "<svg",
-    "<iframe",
-    "javascript:",
-    "xss_test_marker",
-]
+# Load payloads from YAML
+_xss_data = load_payloads("xss")
+XSS_PAYLOADS: list[str] = [p["payload"] for p in _xss_data["reflected"]["payloads"]]
+REFLECTION_MARKERS: list[str] = _xss_data["reflection_markers"]
 
 # HTML encoding that browsers still execute
 ENCODING_BYPASS_PATTERNS = [
@@ -112,14 +85,30 @@ def _check_reflection(payload: str, response: str) -> str | None:
     if lower_payload in lower_resp:
         return f"Payload reflected verbatim: '{payload[:80]}'"
 
-    # Check for partial reflections of dangerous patterns
+    # Check for partial reflections of dangerous patterns.
+    # Verify that payload-specific content (beyond just the marker) appears
+    # near the marker in the response — avoids false positives from template
+    # tags like <script src="..."> that are unrelated to our injection.
     for marker in REFLECTION_MARKERS:
-        if marker.lower() in lower_payload and marker.lower() in lower_resp:
-            # Verify the marker appears in a context related to our injection
-            # (not just randomly in the page)
-            idx = lower_resp.find(marker.lower())
-            context = response[max(0, idx - 30):idx + len(marker) + 30]
-            return f"Marker '{marker}' reflected near: ...{context}..."
+        marker_lower = marker.lower()
+        if marker_lower not in lower_payload:
+            continue
+        # Extract the content that follows the marker in our payload
+        parts = lower_payload.split(marker_lower, 1)
+        if len(parts) < 2:
+            continue
+        content_after = parts[1][:40].strip()
+        if not content_after:
+            continue
+
+        # Search for marker occurrences and check nearby payload content
+        idx = 0
+        while (idx := lower_resp.find(marker_lower, idx)) != -1:
+            window = lower_resp[idx:idx + len(marker_lower) + len(content_after) + 50]
+            if content_after[:20] in window:
+                context = response[max(0, idx - 30):idx + len(marker) + 30]
+                return f"Marker '{marker}' reflected near: ...{context}..."
+            idx += 1
 
     return None
 

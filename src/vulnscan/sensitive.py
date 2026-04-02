@@ -8,62 +8,18 @@ from urllib.parse import urljoin
 import httpx
 
 from vulnscan.models import Severity, VulnType, Vulnerability
+from vulnscan.payloads import load_payloads
 
 logger = logging.getLogger(__name__)
 
-# Common sensitive paths to check
-SENSITIVE_PATHS = {
-    # Version control
-    ".git/HEAD": ["ref: refs/"],
-    ".git/config": ["[core]", "[remote]"],
-    ".svn/entries": ["dir ", "file "],
-    ".hg/store": [],
-
-    # Configuration / secrets
-    ".env": ["DB_", "SECRET", "PASSWORD", "APP_KEY", "API_KEY"],
-    ".htaccess": ["RewriteEngine", "AuthType", "Deny"],
-    "web.config": ["<configuration>", "connectionString"],
-    "config.php": ["<?php", "DB_"],
-
-    # Backup files
-    "backup.sql": ["INSERT INTO", "CREATE TABLE", "MySQL"],
-    "dump.sql": ["INSERT INTO", "CREATE TABLE"],
-    "database.sql": ["INSERT INTO", "CREATE TABLE"],
-    ".bak": [],
-    "index.php.bak": ["<?php"],
-
-    # Info pages
-    "phpinfo.php": ["PHP Version", "phpinfo"],
-    "info.php": ["PHP Version", "phpinfo"],
-    "server-status": ["Server Status", "Apache"],
-    "server-info": ["Server Information"],
-
-    # Admin / debug
-    "admin/": ["admin", "login", "dashboard"],
-    "wp-admin/": ["WordPress"],
-    "debug/": ["debug", "trace"],
-    "elmah.axd": ["Error Log"],
-    "trace.axd": ["Trace"],
-
-    # Robots / sitemap
-    "robots.txt": ["Disallow", "Allow", "User-agent"],
-    "sitemap.xml": ["<urlset", "<sitemap"],
-
-    # Common docs
-    "README.md": ["readme", "installation", "getting started"],
-    "CHANGELOG.md": ["changelog", "release notes", "version history"],
-    "README.txt": ["readme"],
+# Load sensitive paths from YAML
+_sensitive_data = load_payloads("sensitive")
+SENSITIVE_PATHS: dict[str, list[str]] = {
+    entry["path"]: entry["keywords"]
+    for category in _sensitive_data["paths"].values()
+    for entry in category
 }
-
-# Keywords that indicate the response is genuinely interesting, not just a generic 404 page
-INTERESTING_KEYWORDS = {
-    ".git/HEAD": ["ref: refs/"],
-    ".git/config": ["[core]", "[remote]"],
-    ".env": ["=", "DB_", "SECRET", "KEY", "PASS"],
-    "phpinfo.php": ["phpinfo", "PHP Version"],
-    "robots.txt": ["User-agent", "Disallow", "Allow"],
-    "sitemap.xml": ["<urlset", "<sitemap"],
-}
+INTERESTING_KEYWORDS: dict[str, list[str]] = _sensitive_data["interesting_keywords"]
 
 
 def scan_sensitive_paths(
