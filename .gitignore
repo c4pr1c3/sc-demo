@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# oh-my-claudecode / Claude Code
+.omc/
+.claude/
+
+# Scan output
+scan_results.json
+scan_report.html
+
+# OS
+.DS_Store
+Thumbs.db

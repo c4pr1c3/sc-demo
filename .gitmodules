@@ -1,3 +1,4 @@
 [submodule "tests/ctf-games"]
 	path = tests/ctf-games
 	url = https://github.com/c4pr1c3/ctf-games
+	ignore = dirty
