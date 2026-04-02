@@ -32,10 +32,11 @@ def dvwa_ready(dvwa_url: str) -> None:
 
 @pytest.fixture(scope="session")
 def client(dvwa_url: str, dvwa_ready: None) -> httpx.Client:
-    """Authenticated httpx.Client for DVWA."""
-    from vulnscan.crawler import login
+    """Authenticated httpx.Client for DVWA with database initialized."""
+    from vulnscan.crawler import login, setup_database
 
     c = httpx.Client(timeout=30, follow_redirects=True)
     login(c, dvwa_url, "admin", "password")
+    setup_database(c, dvwa_url)
     yield c
     c.close()
