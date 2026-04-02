@@ -38,5 +38,28 @@ def client(dvwa_url: str, dvwa_ready: None) -> httpx.Client:
     c = httpx.Client(timeout=30, follow_redirects=True)
     login(c, dvwa_url, "admin", "password")
     setup_database(c, dvwa_url)
+    # Re-login after database reset (DVWA may invalidate session)
+    login(c, dvwa_url, "admin", "password")
+    _set_dvwa_security(c, dvwa_url, "low")
     yield c
     c.close()
+
+
+def _set_dvwa_security(client: httpx.Client, base_url: str, level: str) -> None:
+    """Set DVWA security level (low/medium/high/impossible)."""
+    from bs4 import BeautifulSoup
+
+    url = f"{base_url}/security.php"
+    resp = client.get(url)
+    if resp.status_code != 200:
+        return
+    soup = BeautifulSoup(resp.text, "html.parser")
+    token = ""
+    for inp in soup.find_all("input", {"name": "user_token"}):
+        token = inp.get("value", "")
+        break
+    client.post(url, data={
+        "security": level,
+        "seclev_submit": "Submit",
+        "user_token": token,
+    })

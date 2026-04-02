@@ -31,7 +31,7 @@ class TestIntegration:
             assert exc_info.value.code in (0, 1)
 
             # JSON report should exist and be valid
-            json_path = os.path.join(tmpdir, "vulnscan_report.json")
+            json_path = os.path.join(tmpdir, "scan_results.json")
             assert os.path.exists(json_path), "JSON report not created"
             with open(json_path) as f:
                 report = json.load(f)
@@ -40,7 +40,7 @@ class TestIntegration:
             assert isinstance(report["vulnerabilities"], list)
 
             # HTML report should exist and be non-empty
-            html_path = os.path.join(tmpdir, "vulnscan_report.html")
+            html_path = os.path.join(tmpdir, "scan_report.html")
             assert os.path.exists(html_path), "HTML report not created"
             with open(html_path) as f:
                 html = f.read()
@@ -61,7 +61,7 @@ class TestIntegration:
                     "--depth", "1",
                 ])
 
-            json_path = os.path.join(tmpdir, "vulnscan_report.json")
+            json_path = os.path.join(tmpdir, "scan_results.json")
             with open(json_path) as f:
                 report = json.load(f)
             assert len(report["vulnerabilities"]) >= 3, (
